@@ -5,7 +5,7 @@ export const sendSuccess = (
     message = "Request successful",
     data = null,
     meta = null,
-  } = {}
+  } = {},
 ) => {
   const response = {
     success: true,

@@ -15,7 +15,6 @@ const hostelSchema = new mongoose.Schema(
       required: [true, "Hostel code is required"],
       trim: true,
       uppercase: true,
-      unique: true,
       minlength: [2, "Hostel code must be at least 2 characters"],
       maxlength: [20, "Hostel code cannot exceed 20 characters"],
     },
@@ -36,18 +35,30 @@ const hostelSchema = new mongoose.Schema(
       type: Number,
       min: [0, "Total blocks cannot be negative"],
       default: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "Total blocks must be an integer",
+      },
     },
 
     totalFloors: {
       type: Number,
       min: [0, "Total floors cannot be negative"],
       default: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "Total floors must be an integer",
+      },
     },
 
     totalRooms: {
       type: Number,
       min: [0, "Total rooms cannot be negative"],
       default: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "Total rooms must be an integer",
+      },
     },
 
     wardenName: {
@@ -84,9 +95,8 @@ const hostelSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
-hostelSchema.index({ name: 1 });
 hostelSchema.index({ code: 1 }, { unique: true });
+hostelSchema.index({ name: 1 });
 hostelSchema.index({ isActive: 1 });
 
 const Hostel = mongoose.model("Hostel", hostelSchema);

@@ -3,6 +3,9 @@ import User from "../models/user.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiError from "../utils/apiError.js";
 
+// import ApiError from "../utils/apiError.js";
+import { HTTP_STATUS } from "../utils/httpStatus.js";
+
 export const protect = asyncHandler(async (req, res, next) => {
   let token = null;
 
@@ -42,3 +45,24 @@ export const protect = asyncHandler(async (req, res, next) => {
   req.user = user;
   next();
 });
+
+export const authorize = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return next(
+        new ApiError(HTTP_STATUS.UNAUTHORIZED, "Unauthorized access"),
+      );
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      return next(
+        new ApiError(
+          HTTP_STATUS.FORBIDDEN,
+          "You are not allowed to access this resource",
+        ),
+      );
+    }
+
+    next();
+  };
+};

@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import userRoutes from "./routes/user.route.js";
+import hostelRoutes from "./routes/hostel.route.js";
 import errorHandler from "./middlewares/error.middleware.js";
 import ApiError from "./utils/apiError.js";
 import cookieParser from "cookie-parser";
@@ -20,6 +21,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/hostels", hostelRoutes);
 
 app.use((req, res, next) => {
   next(new ApiError(404, `Route not found: ${req.originalUrl}`));
