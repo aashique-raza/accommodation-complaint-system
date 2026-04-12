@@ -11,6 +11,7 @@ import {
 } from "../utils/generateToken.js";
 import hashToken from "../utils/hashToken.js";
 import { getRefreshTokenCookieOptions } from "../utils/cookieOptions.js";
+import buildUserResponse from "../utils/buildUserResponse.js";
 
 const REFRESH_COOKIE_NAME =
   process.env.COOKIE_REFRESH_TOKEN_NAME || "refreshToken";
@@ -355,6 +356,6 @@ export const getMyProfile = asyncHandler(async (req, res) => {
   return sendSuccess(res, {
     statusCode: 200,
     message: "Profile fetched successfully",
-    data: user,
+    data: buildUserResponse(user),
   });
 });
