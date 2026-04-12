@@ -195,7 +195,7 @@ const userSchema = new mongoose.Schema(
 // --------------------
 // Indexes
 // --------------------
-userSchema.index({ email: 1 }, { unique: true });
+// userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ role: 1 });
 userSchema.index({ accountStatus: 1 });
 userSchema.index({ "accommodation.hostelId": 1 });
@@ -205,8 +205,10 @@ userSchema.index({ "profile.employeeId": 1 });
 // --------------------
 // Hash password before save
 // --------------------
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) {
+    return;
+  }
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
@@ -214,8 +216,6 @@ userSchema.pre("save", async function (next) {
   if (!this.isNew) {
     this.authMeta.passwordChangedAt = new Date();
   }
-
-  next();
 });
 
 // --------------------
