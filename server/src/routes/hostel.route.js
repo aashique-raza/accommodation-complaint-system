@@ -10,17 +10,13 @@ import { protect , authorize} from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-router.use(protect);
+// router.use(protect);
 
-router
-  .route("/")
-  .get(getAllHostels)
-  .post(authorize("admin", "super_admin"), createHostel);
+router.get("/", getAllHostels);
+router.post("/", protect,authorize("admin", "super_admin"), createHostel);
 
-router
-  .route("/:id")
-  .get(getHostelById)
-  .patch(authorize("admin", "super_admin"), updateHostel)
-  .delete(authorize("admin", "super_admin"), deleteHostel);
+router.get("/:id", getHostelById);
+router.patch("/:id", protect,authorize("admin", "super_admin"), updateHostel);
+router.delete("/:id", protect,authorize("admin", "super_admin"), deleteHostel);
 
 export default router;
