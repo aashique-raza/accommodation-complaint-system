@@ -1,6 +1,6 @@
 import Hostel from "../models/hostel.model.js";
 import ApiError from "../utils/apiError.js";
-import {HTTP_STATUS} from "../utils/httpStatus.js";
+import { HTTP_STATUS } from "../utils/httpStatus.js";
 
 export const createHostelService = async (hostelData, userId) => {
   const existingHostel = await Hostel.findOne({ code: hostelData.code });
@@ -22,13 +22,17 @@ export const createHostelService = async (hostelData, userId) => {
 };
 
 export const getAllHostelsService = async () => {
-  const hostels = await Hostel.find().sort({ createdAt: -1 });
+  const hostels = await Hostel.find(
+    { isActive: true },
+    { _id: 1, name: 1, code: 1 },
+  ).sort({ name: 1 });
 
   return hostels;
 };
-
 export const getHostelByIdService = async (hostelId) => {
-  const hostel = await Hostel.findById(hostelId);
+  const hostel = await Hostel.findById(hostelId)
+    .populate("createdBy", "fullName email")
+    .populate("updatedBy", "fullName email");
 
   if (!hostel) {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Hostel not found");
