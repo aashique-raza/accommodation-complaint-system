@@ -19,25 +19,21 @@ export const createHostel = asyncHandler(async (req, res) => {
 
   const hostel = await createHostelService(validatedData, req.user._id);
 
-  return res
-    .status(HTTP_STATUS.CREATED)
-    .json(
-      new sendSuccess(
-        HTTP_STATUS.CREATED,
-        hostel,
-        "Hostel created successfully",
-      ),
-    );
+  return sendSuccess(res, {
+    statusCode: HTTP_STATUS.CREATED,
+    data: hostel,
+    message: "Hostel created successfully",
+  });
 });
 
 export const getAllHostels = asyncHandler(async (req, res) => {
   const hostels = await getAllHostelsService();
 
-  return res
-    .status(HTTP_STATUS.OK)
-    .json(
-      new sendSuccess(HTTP_STATUS.OK, hostels, "Hostels fetched successfully"),
-    );
+  return sendSuccess(res, {
+    statusCode: HTTP_STATUS.OK,
+    data: hostels,
+    message: "Hostels fetched successfully",
+  });
 });
 
 export const getHostelById = asyncHandler(async (req, res) => {
@@ -45,7 +41,7 @@ export const getHostelById = asyncHandler(async (req, res) => {
 
   const hostel = await getHostelByIdService(hostelId);
 
-  return new sendSuccess(res, {
+  return sendSuccess(res, {
     statusCode: HTTP_STATUS.OK,
     data: hostel,
     message: "Hostel fetched successfully",
@@ -62,7 +58,7 @@ export const updateHostel = asyncHandler(async (req, res) => {
     req.user._id,
   );
 
-  return new sendSuccess(res, {
+  return sendSuccess(res, {
     statusCode: HTTP_STATUS.OK,
     data: updatedHostel,
     message: "Hostel updated successfully",
@@ -74,7 +70,7 @@ export const deleteHostel = asyncHandler(async (req, res) => {
 
   await deleteHostelService(hostelId);
 
-  return new sendSuccess(res, {
+  return sendSuccess(res, { 
     statusCode: HTTP_STATUS.OK,
     message: "Hostel deleted successfully",
   });
