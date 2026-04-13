@@ -113,7 +113,14 @@ export const validateCreateHostel = (body) => {
   };
 };
 
-export const validateUpdateHostel = (body) => {
+export const validateUpdateHostel = (body = {}) => {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw new ApiError(
+      HTTP_STATUS.BAD_REQUEST,
+      "Request body must be a valid object"
+    );
+  }
+
   const allowedFields = [
     "name",
     "code",
@@ -149,7 +156,7 @@ export const validateUpdateHostel = (body) => {
 
   if (body.name !== undefined) {
     if (
-      !isValidString(body.name) ||
+      typeof body.name !== "string" ||
       body.name.trim().length < 2 ||
       body.name.trim().length > 100
     ) {
@@ -163,7 +170,7 @@ export const validateUpdateHostel = (body) => {
 
   if (body.code !== undefined) {
     if (
-      !isValidString(body.code) ||
+      typeof body.code !== "string" ||
       body.code.trim().length < 2 ||
       body.code.trim().length > 20
     ) {
@@ -176,6 +183,8 @@ export const validateUpdateHostel = (body) => {
   }
 
   if (body.type !== undefined) {
+    const allowedHostelTypes = ["boys", "girls", "mixed", "staff", "other"];
+
     if (!allowedHostelTypes.includes(body.type)) {
       throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid hostel type");
     }
@@ -183,7 +192,10 @@ export const validateUpdateHostel = (body) => {
   }
 
   if (body.address !== undefined) {
-    if (!isValidString(body.address) || body.address.trim().length > 300) {
+    if (
+      typeof body.address !== "string" ||
+      body.address.trim().length > 300
+    ) {
       throw new ApiError(
         HTTP_STATUS.BAD_REQUEST,
         "Address cannot exceed 300 characters"
@@ -193,7 +205,7 @@ export const validateUpdateHostel = (body) => {
   }
 
   if (body.totalBlocks !== undefined) {
-    if (!isNonNegativeInteger(body.totalBlocks)) {
+    if (!Number.isInteger(body.totalBlocks) || body.totalBlocks < 0) {
       throw new ApiError(
         HTTP_STATUS.BAD_REQUEST,
         "Total blocks must be a non-negative integer"
@@ -203,7 +215,7 @@ export const validateUpdateHostel = (body) => {
   }
 
   if (body.totalFloors !== undefined) {
-    if (!isNonNegativeInteger(body.totalFloors)) {
+    if (!Number.isInteger(body.totalFloors) || body.totalFloors < 0) {
       throw new ApiError(
         HTTP_STATUS.BAD_REQUEST,
         "Total floors must be a non-negative integer"
@@ -213,7 +225,7 @@ export const validateUpdateHostel = (body) => {
   }
 
   if (body.totalRooms !== undefined) {
-    if (!isNonNegativeInteger(body.totalRooms)) {
+    if (!Number.isInteger(body.totalRooms) || body.totalRooms < 0) {
       throw new ApiError(
         HTTP_STATUS.BAD_REQUEST,
         "Total rooms must be a non-negative integer"
@@ -223,7 +235,10 @@ export const validateUpdateHostel = (body) => {
   }
 
   if (body.wardenName !== undefined) {
-    if (!isValidString(body.wardenName) || body.wardenName.trim().length > 100) {
+    if (
+      typeof body.wardenName !== "string" ||
+      body.wardenName.trim().length > 100
+    ) {
       throw new ApiError(
         HTTP_STATUS.BAD_REQUEST,
         "Warden name cannot exceed 100 characters"
@@ -234,7 +249,7 @@ export const validateUpdateHostel = (body) => {
 
   if (body.wardenContact !== undefined) {
     if (
-      !isValidString(body.wardenContact) ||
+      typeof body.wardenContact !== "string" ||
       body.wardenContact.trim().length > 20
     ) {
       throw new ApiError(
