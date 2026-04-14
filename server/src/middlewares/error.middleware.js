@@ -6,7 +6,7 @@ const errorHandler = (err, req, res, next) => {
   if (!(error instanceof ApiError)) {
     error = new ApiError(
       error.statusCode || 500,
-      error.message || "Internal server error"
+      error.message || "Internal server error",
     );
   }
 
@@ -16,16 +16,12 @@ const errorHandler = (err, req, res, next) => {
 
   if (err.code === 11000) {
     const duplicateField = Object.keys(err.keyValue || {})[0];
-    error = new ApiError(
-      409,
-      `${duplicateField} already exists`,
-      err.keyValue
-    );
+    error = new ApiError(409, `${duplicateField} already exists`, err.keyValue);
   }
 
   if (err.name === "ValidationError") {
     const validationErrors = Object.values(err.errors).map(
-      (item) => item.message
+      (item) => item.message,
     );
 
     error = new ApiError(400, "Validation failed", validationErrors);

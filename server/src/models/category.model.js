@@ -72,7 +72,13 @@ const categorySchema = new Schema(
       default: 0,
       min: [0, "Sort order cannot be negative"],
     },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
+
   {
     timestamps: true,
     versionKey: false,
@@ -83,18 +89,18 @@ const categorySchema = new Schema(
   Ensure duplicates inside applicableTo are removed.
   Example: ["hostel", "hostel"] => ["hostel"]
 */
-categorySchema.pre("validate", function (next) {
+categorySchema.pre("validate", function () {
   if (this.name && (!this.code || !this.code.trim())) {
     this.code = generateCodeFromName(this.name);
   }
 
   if (Array.isArray(this.applicableTo)) {
     this.applicableTo = [
-      ...new Set(this.applicableTo.map((item) => item.trim().toLowerCase())),
+      ...new Set(
+        this.applicableTo.map((item) => String(item).trim().toLowerCase()),
+      ),
     ];
   }
-
-  next();
 });
 
 /*
