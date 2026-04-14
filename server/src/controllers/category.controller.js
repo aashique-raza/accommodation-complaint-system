@@ -82,7 +82,7 @@ const getCategoryById = asyncHandler(async (req, res) => {
 
   const category = await Category.findById(id).populate(
     "createdBy",
-    "fullName email role"
+    "fullName email role",
   );
 
   if (!category) {
@@ -113,7 +113,7 @@ const updateCategory = asyncHandler(async (req, res) => {
     const existingCategoryByName = await Category.findOne({
       name: name.trim(),
       _id: { $ne: id },
-    });
+    }).populate("createdBy", "fullName email role");
 
     if (existingCategoryByName) {
       throw new ApiError(409, "Category with this name already exists");
