@@ -80,7 +80,10 @@ const getAllCategories = asyncHandler(async (req, res) => {
 const getCategoryById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const category = await Category.findById(id);
+  const category = await Category.findById(id).populate(
+    "createdBy",
+    "fullName email role"
+  );
 
   if (!category) {
     throw new ApiError(404, "Category not found");
@@ -92,7 +95,6 @@ const getCategoryById = asyncHandler(async (req, res) => {
     message: "Category fetched successfully",
   });
 });
-
 const updateCategory = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { name, code, description, applicableTo, isActive } = req.body;
