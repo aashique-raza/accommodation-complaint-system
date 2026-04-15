@@ -136,3 +136,37 @@ export const getAllComplaints = asyncHandler(async (req, res) => {
     message: "Complaints fetched successfully",
   });
 });
+
+
+export const updateComplaintStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!status || !status.trim()) {
+    throw new ApiError(400, "Status is required");
+  }
+
+  const allowedStatuses = ["pending", "in_progress", "resolved", "rejected"];
+
+  if (!allowedStatuses.includes(status)) {
+    throw new ApiError(400, "Invalid complaint status");
+  }
+
+  const complaint = await Complaint.findById(id)
+    .populate("category", "name code -_id")
+    .populate("hostel", "name -_id")
+    .populate("createdBy", "fullName email role");
+
+  if (!complaint) {
+    throw new ApiError(404, "Complaint not found");
+  }
+
+  complaint.status = status;
+  await complaint.save();
+
+  return sendSuccess(res, {
+    statusCode: HTTP_STATUS.OK,
+    data: complaint,
+    message: "Complaint status updated successfully",
+  });
+});
