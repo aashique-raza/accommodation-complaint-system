@@ -53,6 +53,16 @@ const complaintSchema = new mongoose.Schema(
       maxlength: [20, "Room number cannot exceed 20 characters"],
       default: "",
     },
+    resolvedAt: {
+      type: Date,
+      default: null,
+    },
+
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   {
     timestamps: true,

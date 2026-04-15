@@ -17,6 +17,7 @@ const complaintPopulateOptions = [
   { path: "category", select: "name code -_id" },
   { path: "hostel", select: "name -_id" },
   { path: "createdBy", select: "fullName email role" },
+  { path: "updatedBy", select: "fullName email role" },
 ];
 
 const ALLOWED_STATUS_TRANSITIONS = {
@@ -26,15 +27,17 @@ const ALLOWED_STATUS_TRANSITIONS = {
   rejected: [],
 };
 
-const ALLOWED_SORT_FIELDS = ["createdAt", "updatedAt", "title", "status", "roomNumber"];
+const ALLOWED_SORT_FIELDS = [
+  "createdAt",
+  "updatedAt",
+  "title",
+  "status",
+  "roomNumber",
+];
 
 const escapeRegex = (value = "") => {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 };
-
-
-
-
 
 export const createComplaint = asyncHandler(async (req, res) => {
   const { title, description, category, hostel, roomNumber } = req.body;
@@ -351,6 +354,12 @@ export const updateComplaintStatus = asyncHandler(async (req, res) => {
   }
 
   complaint.status = normalizedStatus;
+  complaint.updatedBy = req.user._id;
+
+  if (normalizedStatus === "resolved") {
+    complaint.resolvedAt = new Date();
+  }
+
   await complaint.save();
 
   await ComplaintActivity.create({
