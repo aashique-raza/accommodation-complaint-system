@@ -26,6 +26,16 @@ const ALLOWED_STATUS_TRANSITIONS = {
   rejected: [],
 };
 
+const ALLOWED_SORT_FIELDS = ["createdAt", "updatedAt", "title", "status", "roomNumber"];
+
+const escapeRegex = (value = "") => {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
+
+
+
+
 export const createComplaint = asyncHandler(async (req, res) => {
   const { title, description, category, hostel, roomNumber } = req.body;
 
@@ -95,13 +105,80 @@ export const createComplaint = asyncHandler(async (req, res) => {
 });
 
 export const getMyComplaints = asyncHandler(async (req, res) => {
-  const complaints = await Complaint.find({ createdBy: req.user._id })
-    .populate(complaintPopulateOptions)
-    .sort({ createdAt: -1 });
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+  const search = req.query.search?.trim() || "";
+  const sortBy = req.query.sortBy?.trim() || "createdAt";
+  const sortOrder = req.query.sortOrder?.trim().toLowerCase() || "desc";
+
+  if (page < 1) {
+    throw new ApiError(
+      HTTP_STATUS.BAD_REQUEST,
+      "Page must be greater than or equal to 1",
+    );
+  }
+
+  if (limit < 1 || limit > 100) {
+    throw new ApiError(
+      HTTP_STATUS.BAD_REQUEST,
+      "Limit must be between 1 and 100",
+    );
+  }
+
+  if (!ALLOWED_SORT_FIELDS.includes(sortBy)) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid sortBy field");
+  }
+
+  if (!["asc", "desc"].includes(sortOrder)) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid sortOrder value");
+  }
+
+  const skip = (page - 1) * limit;
+  const filter = { createdBy: req.user._id };
+
+  if (search) {
+    const safeSearch = escapeRegex(search);
+
+    filter.$or = [
+      { title: { $regex: safeSearch, $options: "i" } },
+      { description: { $regex: safeSearch, $options: "i" } },
+      { roomNumber: { $regex: safeSearch, $options: "i" } },
+    ];
+  }
+
+  const sort = {
+    [sortBy]: sortOrder === "asc" ? 1 : -1,
+  };
+
+  const [complaints, totalDocuments] = await Promise.all([
+    Complaint.find(filter)
+      .populate(complaintPopulateOptions)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit),
+    Complaint.countDocuments(filter),
+  ]);
+
+  const totalPages = Math.ceil(totalDocuments / limit);
 
   return sendSuccess(res, {
     statusCode: HTTP_STATUS.OK,
-    data: complaints,
+    data: {
+      complaints,
+      pagination: {
+        currentPage: page,
+        pageSize: limit,
+        totalDocuments,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+      filters: {
+        search,
+        sortBy,
+        sortOrder,
+      },
+    },
     message: "My complaints fetched successfully",
   });
 });
@@ -135,6 +212,33 @@ export const getComplaintById = asyncHandler(async (req, res) => {
 
 export const getAllComplaints = asyncHandler(async (req, res) => {
   const { status, category, hostel } = req.query;
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+  const search = req.query.search?.trim() || "";
+  const sortBy = req.query.sortBy?.trim() || "createdAt";
+  const sortOrder = req.query.sortOrder?.trim().toLowerCase() || "desc";
+
+  if (page < 1) {
+    throw new ApiError(
+      HTTP_STATUS.BAD_REQUEST,
+      "Page must be greater than or equal to 1",
+    );
+  }
+
+  if (limit < 1 || limit > 100) {
+    throw new ApiError(
+      HTTP_STATUS.BAD_REQUEST,
+      "Limit must be between 1 and 100",
+    );
+  }
+
+  if (!ALLOWED_SORT_FIELDS.includes(sortBy)) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid sortBy field");
+  }
+
+  if (!["asc", "desc"].includes(sortOrder)) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid sortOrder value");
+  }
 
   const filter = {};
 
@@ -156,13 +260,54 @@ export const getAllComplaints = asyncHandler(async (req, res) => {
     filter.hostel = hostel;
   }
 
-  const complaints = await Complaint.find(filter)
-    .populate(complaintPopulateOptions)
-    .sort({ createdAt: -1 });
+  if (search) {
+    const safeSearch = escapeRegex(search);
+
+    filter.$or = [
+      { title: { $regex: safeSearch, $options: "i" } },
+      { description: { $regex: safeSearch, $options: "i" } },
+      { roomNumber: { $regex: safeSearch, $options: "i" } },
+    ];
+  }
+
+  const skip = (page - 1) * limit;
+
+  const sort = {
+    [sortBy]: sortOrder === "asc" ? 1 : -1,
+  };
+
+  const [complaints, totalDocuments] = await Promise.all([
+    Complaint.find(filter)
+      .populate(complaintPopulateOptions)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit),
+    Complaint.countDocuments(filter),
+  ]);
+
+  const totalPages = Math.ceil(totalDocuments / limit);
 
   return sendSuccess(res, {
     statusCode: HTTP_STATUS.OK,
-    data: complaints,
+    data: {
+      complaints,
+      pagination: {
+        currentPage: page,
+        pageSize: limit,
+        totalDocuments,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+      filters: {
+        status: status || "",
+        category: category || "",
+        hostel: hostel || "",
+        search,
+        sortBy,
+        sortOrder,
+      },
+    },
     message: "Complaints fetched successfully",
   });
 });
@@ -196,8 +341,7 @@ export const updateComplaintStatus = asyncHandler(async (req, res) => {
     );
   }
 
-  const allowedNextStatuses =
-    ALLOWED_STATUS_TRANSITIONS[currentStatus] || [];
+  const allowedNextStatuses = ALLOWED_STATUS_TRANSITIONS[currentStatus] || [];
 
   if (!allowedNextStatuses.includes(normalizedStatus)) {
     throw new ApiError(
