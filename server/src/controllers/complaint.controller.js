@@ -65,9 +65,9 @@ export const getMyComplaints = asyncHandler(async (req, res) => {
     .populate("createdBy", "fullName email role")
     .sort({ createdAt: -1 });
 
-  if (!complaints || complaints.length === 0) {
-    throw new ApiError(404, "No complaints found for the user");
-  }
+  // if (!complaints || complaints.length === 0) {
+  //   throw new ApiError(404, "No complaints found for the user");
+  // }
 
   return sendSuccess(res, {
     statusCode: HTTP_STATUS.OK,
@@ -75,7 +75,6 @@ export const getMyComplaints = asyncHandler(async (req, res) => {
     message: "My complaints fetched successfully",
   });
 });
-
 
 export const getComplaintById = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -105,5 +104,35 @@ export const getComplaintById = asyncHandler(async (req, res) => {
     statusCode: HTTP_STATUS.OK,
     data: complaint,
     message: "Complaint fetched successfully",
+  });
+});
+
+export const getAllComplaints = asyncHandler(async (req, res) => {
+  const { status, category, hostel } = req.query;
+
+  const filter = {};
+
+  if (status) {
+    filter.status = status;
+  }
+
+  if (category) {
+    filter.category = category;
+  }
+
+  if (hostel) {
+    filter.hostel = hostel;
+  }
+
+  const complaints = await Complaint.find(filter)
+    .populate("category", "name code -_id")
+    .populate("hostel", "name -_id")
+    .populate("createdBy", "fullName email role")
+    .sort({ createdAt: -1 });
+
+  return sendSuccess(res, {
+    statusCode: HTTP_STATUS.OK,
+    data: complaints,
+    message: "Complaints fetched successfully",
   });
 });
