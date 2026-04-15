@@ -6,39 +6,58 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { sendSuccess } from "../utils/apiResponse.js";
 import { HTTP_STATUS } from "../utils/httpStatus.js";
 
+const ALLOWED_COMPLAINT_STATUSES = [
+  "pending",
+  "in_progress",
+  "resolved",
+  "rejected",
+];
+
+const complaintPopulateOptions = [
+  { path: "category", select: "name code -_id" },
+  { path: "hostel", select: "name -_id" },
+  { path: "createdBy", select: "fullName email role" },
+];
+
 export const createComplaint = asyncHandler(async (req, res) => {
   const { title, description, category, hostel, roomNumber } = req.body;
 
   if (!title || !title.trim()) {
-    throw new ApiError(400, "Complaint title is required");
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Complaint title is required");
   }
 
   if (!description || !description.trim()) {
-    throw new ApiError(400, "Complaint description is required");
+    throw new ApiError(
+      HTTP_STATUS.BAD_REQUEST,
+      "Complaint description is required",
+    );
   }
 
   if (!category) {
-    throw new ApiError(400, "Category is required");
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Category is required");
   }
 
   if (!hostel) {
-    throw new ApiError(400, "Hostel is required");
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Hostel is required");
   }
 
   const existingCategory = await Category.findById(category);
 
   if (!existingCategory) {
-    throw new ApiError(404, "Category not found");
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Category not found");
   }
 
   if (!existingCategory.isActive) {
-    throw new ApiError(400, "Selected category is inactive");
+    throw new ApiError(
+      HTTP_STATUS.BAD_REQUEST,
+      "Selected category is inactive",
+    );
   }
 
   const existingHostel = await Hostel.findById(hostel);
 
   if (!existingHostel) {
-    throw new ApiError(404, "Hostel not found");
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Hostel not found");
   }
 
   const complaint = await Complaint.create({
@@ -46,28 +65,26 @@ export const createComplaint = asyncHandler(async (req, res) => {
     description: description.trim(),
     category,
     hostel,
-    roomNumber: roomNumber?.trim() || "",
+    roomNumber: roomNumber?.trim(),
     createdBy: req.user._id,
     status: "pending",
   });
 
+  const populatedComplaint = await Complaint.findById(complaint._id).populate(
+    complaintPopulateOptions,
+  );
+
   return sendSuccess(res, {
     statusCode: HTTP_STATUS.CREATED,
-    data: complaint,
+    data: populatedComplaint,
     message: "Complaint created successfully",
   });
 });
 
 export const getMyComplaints = asyncHandler(async (req, res) => {
   const complaints = await Complaint.find({ createdBy: req.user._id })
-    .populate("category", "name code")
-    .populate("hostel", "name")
-    .populate("createdBy", "fullName email role")
+    .populate(complaintPopulateOptions)
     .sort({ createdAt: -1 });
-
-  // if (!complaints || complaints.length === 0) {
-  //   throw new ApiError(404, "No complaints found for the user");
-  // }
 
   return sendSuccess(res, {
     statusCode: HTTP_STATUS.OK,
@@ -79,25 +96,21 @@ export const getMyComplaints = asyncHandler(async (req, res) => {
 export const getComplaintById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  let complaint;
+  let complaintQuery;
 
   if (req.user.role === "admin" || req.user.role === "super_admin") {
-    complaint = await Complaint.findById(id)
-      .populate("category", "name code -_id")
-      .populate("hostel", "name -_id")
-      .populate("createdBy", "fullName email role");
+    complaintQuery = Complaint.findById(id);
   } else {
-    complaint = await Complaint.findOne({
+    complaintQuery = Complaint.findOne({
       _id: id,
       createdBy: req.user._id,
-    })
-      .populate("category", "name code -_id")
-      .populate("hostel", "name -_id")
-      .populate("createdBy", "fullName email role");
+    });
   }
 
+  const complaint = await complaintQuery.populate(complaintPopulateOptions);
+
   if (!complaint) {
-    throw new ApiError(404, "Complaint not found");
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Complaint not found");
   }
 
   return sendSuccess(res, {
@@ -113,7 +126,13 @@ export const getAllComplaints = asyncHandler(async (req, res) => {
   const filter = {};
 
   if (status) {
-    filter.status = status;
+    const normalizedStatus = status.trim().toLowerCase();
+
+    if (!ALLOWED_COMPLAINT_STATUSES.includes(normalizedStatus)) {
+      throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid complaint status");
+    }
+
+    filter.status = normalizedStatus;
   }
 
   if (category) {
@@ -125,9 +144,7 @@ export const getAllComplaints = asyncHandler(async (req, res) => {
   }
 
   const complaints = await Complaint.find(filter)
-    .populate("category", "name code -_id")
-    .populate("hostel", "name -_id")
-    .populate("createdBy", "fullName email role")
+    .populate(complaintPopulateOptions)
     .sort({ createdAt: -1 });
 
   return sendSuccess(res, {
@@ -137,36 +154,36 @@ export const getAllComplaints = asyncHandler(async (req, res) => {
   });
 });
 
-
 export const updateComplaintStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
   if (!status || !status.trim()) {
-    throw new ApiError(400, "Status is required");
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Status is required");
   }
 
-  const allowedStatuses = ["pending", "in_progress", "resolved", "rejected"];
+  const normalizedStatus = status.trim().toLowerCase();
 
-  if (!allowedStatuses.includes(status)) {
-    throw new ApiError(400, "Invalid complaint status");
+  if (!ALLOWED_COMPLAINT_STATUSES.includes(normalizedStatus)) {
+    throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Invalid complaint status");
   }
 
-  const complaint = await Complaint.findById(id)
-    .populate("category", "name code -_id")
-    .populate("hostel", "name -_id")
-    .populate("createdBy", "fullName email role");
+  const complaint = await Complaint.findById(id);
 
   if (!complaint) {
-    throw new ApiError(404, "Complaint not found");
+    throw new ApiError(HTTP_STATUS.NOT_FOUND, "Complaint not found");
   }
 
-  complaint.status = status;
+  complaint.status = normalizedStatus;
   await complaint.save();
+
+  const updatedComplaint = await Complaint.findById(complaint._id).populate(
+    complaintPopulateOptions,
+  );
 
   return sendSuccess(res, {
     statusCode: HTTP_STATUS.OK,
-    data: complaint,
+    data: updatedComplaint,
     message: "Complaint status updated successfully",
   });
 });
