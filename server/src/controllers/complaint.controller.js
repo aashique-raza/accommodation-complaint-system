@@ -75,3 +75,35 @@ export const getMyComplaints = asyncHandler(async (req, res) => {
     message: "My complaints fetched successfully",
   });
 });
+
+
+export const getComplaintById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  let complaint;
+
+  if (req.user.role === "admin" || req.user.role === "super_admin") {
+    complaint = await Complaint.findById(id)
+      .populate("category", "name code -_id")
+      .populate("hostel", "name -_id")
+      .populate("createdBy", "fullName email role");
+  } else {
+    complaint = await Complaint.findOne({
+      _id: id,
+      createdBy: req.user._id,
+    })
+      .populate("category", "name code -_id")
+      .populate("hostel", "name -_id")
+      .populate("createdBy", "fullName email role");
+  }
+
+  if (!complaint) {
+    throw new ApiError(404, "Complaint not found");
+  }
+
+  return sendSuccess(res, {
+    statusCode: HTTP_STATUS.OK,
+    data: complaint,
+    message: "Complaint fetched successfully",
+  });
+});

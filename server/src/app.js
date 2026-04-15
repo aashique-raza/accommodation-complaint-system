@@ -5,6 +5,7 @@ import hostelRoutes from "./routes/hostel.route.js";
 import errorHandler from "./middlewares/error.middleware.js";
 import categoryRoutes from "./routes/category.routes.js";
 import complaintRoutes from "./routes/complaint.route.js";
+// import complaintRoutes from "./routes/complaint.routes.js";
 
 import ApiError from "./utils/apiError.js";
 import cookieParser from "cookie-parser";
