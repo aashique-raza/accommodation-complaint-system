@@ -5,7 +5,7 @@ import ApiError from "../utils/apiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { sendSuccess } from "../utils/apiResponse.js";
 import { HTTP_STATUS } from "../utils/httpStatus.js";
-
+import ComplaintActivity from "../models/complainActivity.model.js";
 const ALLOWED_COMPLAINT_STATUSES = [
   "pending",
   "in_progress",
@@ -68,6 +68,12 @@ export const createComplaint = asyncHandler(async (req, res) => {
     roomNumber: roomNumber?.trim(),
     createdBy: req.user._id,
     status: "pending",
+  });
+  await ComplaintActivity.create({
+    complaint: complaint._id,
+    actionType: "created",
+    performedBy: req.user._id,
+    note: "Complaint submitted",
   });
 
   const populatedComplaint = await Complaint.findById(complaint._id).populate(
@@ -156,7 +162,7 @@ export const getAllComplaints = asyncHandler(async (req, res) => {
 
 export const updateComplaintStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, note } = req.body;
 
   if (!status || !status.trim()) {
     throw new ApiError(HTTP_STATUS.BAD_REQUEST, "Status is required");
@@ -174,8 +180,26 @@ export const updateComplaintStatus = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Complaint not found");
   }
 
+  if (complaint.status === normalizedStatus) {
+    throw new ApiError(
+      HTTP_STATUS.BAD_REQUEST,
+      `Complaint is already ${normalizedStatus}`,
+    );
+  }
+
+  const oldStatus = complaint.status;
+
   complaint.status = normalizedStatus;
   await complaint.save();
+
+  await ComplaintActivity.create({
+    complaint: complaint._id,
+    actionType: "status_changed",
+    performedBy: req.user._id,
+    oldStatus,
+    newStatus: normalizedStatus,
+    note: note?.trim(),
+  });
 
   const updatedComplaint = await Complaint.findById(complaint._id).populate(
     complaintPopulateOptions,

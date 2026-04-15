@@ -2,11 +2,6 @@ import mongoose from "mongoose";
 
 const complaintSchema = new mongoose.Schema(
   {
-    complaintId: {
-      type: String,
-      unique: true,
-    },
-
     title: {
       type: String,
       required: [true, "Complaint title is required"],
@@ -62,7 +57,7 @@ const complaintSchema = new mongoose.Schema(
   {
     timestamps: true,
     versionKey: false,
-  }
+  },
 );
 
 complaintSchema.index({ createdBy: 1, createdAt: -1 });
