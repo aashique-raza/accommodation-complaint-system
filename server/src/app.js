@@ -5,10 +5,11 @@ import hostelRoutes from "./routes/hostel.route.js";
 import errorHandler from "./middlewares/error.middleware.js";
 import categoryRoutes from "./routes/category.routes.js";
 import complaintRoutes from "./routes/complaint.route.js";
-// import complaintRoutes from "./routes/complaint.routes.js";
+import complainActivity from "./routes/complainActivity.route.js";
 
 import ApiError from "./utils/apiError.js";
 import cookieParser from "cookie-parser";
+import ComplaintActivity from "./models/complainActivity.model.js";
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/hostels", hostelRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/complaints", complaintRoutes);
+app.use("/api/v1/complain-activities", complainActivity);
 
 app.use((req, res, next) => {
   next(new ApiError(404, `Route not found: ${req.originalUrl}`));
