@@ -57,3 +57,21 @@ export const createComplaint = asyncHandler(async (req, res) => {
     message: "Complaint created successfully",
   });
 });
+
+export const getMyComplaints = asyncHandler(async (req, res) => {
+  const complaints = await Complaint.find({ createdBy: req.user._id })
+    .populate("category", "name code")
+    .populate("hostel", "name")
+    .populate("createdBy", "fullName email role")
+    .sort({ createdAt: -1 });
+
+  if (!complaints || complaints.length === 0) {
+    throw new ApiError(404, "No complaints found for the user");
+  }
+
+  return sendSuccess(res, {
+    statusCode: HTTP_STATUS.OK,
+    data: complaints,
+    message: "My complaints fetched successfully",
+  });
+});
