@@ -19,6 +19,13 @@ const complaintPopulateOptions = [
   { path: "createdBy", select: "fullName email role" },
 ];
 
+const ALLOWED_STATUS_TRANSITIONS = {
+  pending: ["in_progress"],
+  in_progress: ["resolved", "rejected"],
+  resolved: [],
+  rejected: [],
+};
+
 export const createComplaint = asyncHandler(async (req, res) => {
   const { title, description, category, hostel, roomNumber } = req.body;
 
@@ -180,14 +187,24 @@ export const updateComplaintStatus = asyncHandler(async (req, res) => {
     throw new ApiError(HTTP_STATUS.NOT_FOUND, "Complaint not found");
   }
 
-  if (complaint.status === normalizedStatus) {
+  const currentStatus = complaint.status;
+
+  if (currentStatus === normalizedStatus) {
     throw new ApiError(
       HTTP_STATUS.BAD_REQUEST,
       `Complaint is already ${normalizedStatus}`,
     );
   }
 
-  const oldStatus = complaint.status;
+  const allowedNextStatuses =
+    ALLOWED_STATUS_TRANSITIONS[currentStatus] || [];
+
+  if (!allowedNextStatuses.includes(normalizedStatus)) {
+    throw new ApiError(
+      HTTP_STATUS.BAD_REQUEST,
+      `Status cannot be changed from ${currentStatus} to ${normalizedStatus}`,
+    );
+  }
 
   complaint.status = normalizedStatus;
   await complaint.save();
@@ -196,7 +213,7 @@ export const updateComplaintStatus = asyncHandler(async (req, res) => {
     complaint: complaint._id,
     actionType: "status_changed",
     performedBy: req.user._id,
-    oldStatus,
+    oldStatus: currentStatus,
     newStatus: normalizedStatus,
     note: note?.trim(),
   });
