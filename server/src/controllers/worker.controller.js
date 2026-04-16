@@ -261,7 +261,7 @@ export const getAllWorkers = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, {
     statusCode: 200,
-    message: "Workers fetched successfully",
+    message: "Workers data fetched successfully",
     data: {
       workers,
       pagination: {
@@ -467,7 +467,7 @@ export const updateWorker = asyncHandler(async (req, res) => {
 
   const validationErrors = {};
 
-  // Restricted fields even for admin in this API
+  // Restricted fields even for admin in this API--
   if (role !== undefined) {
     validationErrors.role = "Role cannot be updated";
   }
