@@ -319,7 +319,7 @@ export const getWorkerById = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, {
     statusCode: 200,
-    message: "Worker profile fetched successfully",
+    message: "Worker profile  data fetched successfully",
     data: {
       worker,
     },
