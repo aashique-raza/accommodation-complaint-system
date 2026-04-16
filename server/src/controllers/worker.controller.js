@@ -683,7 +683,7 @@ export const updateWorker = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, {
     statusCode: 200,
-    message: "Worker updated successfully",
+    message: "Worker updated successfully  ",
     data: {
       worker: updatedWorker,
     },
