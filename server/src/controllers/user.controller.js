@@ -79,7 +79,6 @@ export const registerUser = asyncHandler(async (req, res) => {
   const normalizedEmail = email.trim().toLowerCase();
 
   const existingUser = await User.findOne({ email: normalizedEmail });
-
   if (existingUser) {
     throw new ApiError(409, "Validation failed", {
       email: "User already exists with this email",
@@ -107,7 +106,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     email: normalizedEmail,
     phone: phone?.trim() || null,
     password,
-    role: "student",
+    role: "student", // force public signup to student only
     accountStatus: "active",
     isEmailVerified: false,
     profile: {
@@ -125,8 +124,15 @@ export const registerUser = asyncHandler(async (req, res) => {
       floor: accommodation?.floor?.trim() || null,
       roomNumber: accommodation?.roomNumber?.trim() || null,
     },
-    createdByUserId: null,
-    updatedByUserId: null,
+    assignment: {
+      assignedHostelIds: [],
+      designation: null,
+      categoriesHandled: [],
+      isAvailable: true,
+      lastAssignedAt: null,
+    },
+    createdBy: null,
+    updatedBy: null,
   });
 
   return sendSuccess(res, {
