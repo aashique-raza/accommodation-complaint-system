@@ -594,6 +594,6 @@ export const getMyAssignedComplaints = asyncHandler(async (req, res) => {
         sortOrder,
       },
     },
-    message: "Assigned complaints fetched successfully",
+    message: "Assigned complaintss fetched successfully",
   });
 });
